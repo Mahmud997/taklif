@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shaqyrtu — Админка</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b0a; --card:#161310; --inner:#1e1a16; --gold:#c9a84c; --gold-h:#dfc06a;
+  --gold-soft:rgba(201,168,76,.14); --gold-glow:rgba(201,168,76,.35);
+  --text:#f0e8da; --muted:#9a8f80; --border:#2e2820; --border-h:#4a4034;
+  --green:#4caf7a; --red:#e57373;
+  --r:14px; --r-sm:9px; --sh:0 12px 40px rgba(0,0,0,.5);
+  --tr:.22s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse 90% 60% at 50% -30%,rgba(201,168,76,.08),transparent);
+  color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:40px 34px;max-width:400px;width:100%;text-align:center;box-shadow:var(--sh)}
+.login-card h1{font-size:20px;letter-spacing:5px;color:var(--gold);margin-bottom:6px;font-weight:600}
+.login-card p{font-size:13px;color:var(--muted);margin-bottom:26px;line-height:1.6}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px;border-radius:28px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#b8923e);color:#0c0b0a;font-weight:600;font-size:14px;transition:all var(--tr);box-shadow:0 4px 18px var(--gold-glow);font-family:inherit}
+.btn-google:hover{background:linear-gradient(135deg,var(--gold-h),var(--gold));transform:translateY(-1px)}
+.btn-google svg{width:20px;height:20px}
+.login-error{margin-top:16px;font-size:12.5px;color:var(--red);line-height:1.5}
+.uid-box{margin-top:16px;padding:12px;background:#100e0c;border:1px solid var(--border);border-radius:8px;font-family:monospace;font-size:11px;word-break:break-all;color:var(--gold);cursor:pointer;transition:border-color var(--tr)}
+.uid-box:hover{border-color:var(--gold)}
+/* HEADER */
+header{background:rgba(22,19,16,.88);backdrop-filter:blur(16px);padding:13px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;gap:16px;flex-wrap:wrap}
+header h1{font-size:17px;color:var(--gold);letter-spacing:4px;font-weight:600}
+.header-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.header-user{font-size:12px;color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:7px 13px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;transition:all var(--tr);white-space:nowrap;font-family:inherit}
+.header-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+/* TABS */
+.tabs{display:flex;gap:6px;padding:20px 28px 0;max-width:1200px;margin:0 auto;flex-wrap:wrap}
+.tab{padding:11px 20px;border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;transition:all var(--tr);font-family:inherit}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.tab.active{background:var(--card);color:var(--gold);border-color:var(--border)}
+.tab .badge{display:inline-block;background:var(--gold);color:#0c0b0a;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:6px}
+/* CONTENT */
+.content{max-width:1200px;margin:0 auto;padding:0 28px 40px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:0 18px 18px 18px;padding:24px;min-height:400px}
+.panel-title{font-size:16px;color:var(--gold);margin-bottom:18px;font-weight:600}
+/* CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--inner);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.stat .num{font-size:26px;font-weight:700;color:var(--gold)}
+.stat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+/* ITEMS */
+.item{background:var(--inner);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;transition:border-color var(--tr)}
+.item:hover{border-color:var(--border-h)}
+.item-main{flex:1;min-width:0}
+.item-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.item-meta{font-size:12px;color:var(--muted);line-height:1.5}
+.item-text{font-size:13px;line-height:1.6;margin-top:6px;white-space:pre-line}
+.item-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.btn-sm{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;transition:all var(--tr);font-family:inherit;white-space:nowrap}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.btn-sm.green{border-color:var(--green);color:var(--green)}
+.btn-sm.green:hover{background:rgba(76,175,122,.12)}
+.btn-sm.red{border-color:var(--red);color:var(--red)}
+.btn-sm.red:hover{background:rgba(229,115,115,.12)}
+/* STATUS */
+.badge-status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.badge-yes{background:rgba(76,175,122,.15);color:var(--green)}
+.badge-no{background:rgba(229,115,115,.15);color:var(--red)}
+.badge-pending{background:rgba(201,168,76,.15);color:var(--gold)}
+/* EMPTY */
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:13px}
+.empty svg{width:48px;height:48px;fill:var(--border-h);margin-bottom:12px}
+/* STORAGE */
+.file-row{display:flex;align-items:center;gap:12px;background:var(--inner);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.file-icon{width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);font-size:11px;font-weight:700}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-meta{font-size:11px;color:var(--muted)}
+.storage-bar{height:6px;background:var(--border);border-radius:3px;margin:16px 0;overflow:hidden}
+.storage-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-h));transition:width .3s}
+/* TOAST */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#27221c;color:var(--text);padding:12px 26px;border-radius:30px;border:1px solid rgba(201,168,76,.4);font-size:13px;z-index:1000;opacity:0;transition:all .35s;pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.45);max-width:90vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+/* SPINNER */
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:768px){
+  header{padding:10px 14px}
+  header h1{font-size:14px;letter-spacing:2px}
+  .tabs{padding:14px 14px 0}
+  .content{padding:0 14px 30px}
+  .panel{padding:18px;border-radius:0 14px 14px 14px}
+  .item{flex-direction:column}
+  .item-actions{width:100%}
+  .tab{padding:9px 14px;font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>SHAQYRTU</h1>
+    <p>Админ-панель.<br>Войдите, чтобы управлять приглашениями.</p>
+    <button class="btn-google" id="googleBtn">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.09A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.46 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+      Войти через Google
+    </button>
+    <div class="login-error" id="loginError" style="display:none"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <h1>SHAQYRTU · Админ</h1>
+    <div class="header-controls">
+      <span class="header-user" id="userEmail"></span>
+      <button class="header-btn" onclick="logout()">Выйти</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="rsvp" onclick="switchTab('rsvp')">RSVP <span class="badge" id="rsvpBadge" style="display:none">0</span></button>
+    <button class="tab" data-tab="wishes" onclick="switchTab('wishes')">Пожелания <span class="badge" id="wishesBadge" style="display:none">0</span></button>
+    <button class="tab" data-tab="storage" onclick="switchTab('storage')">Хранилище</button>
+  </div>
+
+  <div class="content">
+    <div class="panel" id="panel">
+      <div class="spinner"></div>
+      <div class="loading-text">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, listAll, getMetadata, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let currentUser = null;
+let currentTab = 'rsvp';
+let invites = [];
+let selectedInviteId = null;
+let unsubRsvp = null, unsubWishes = null;
+
+/* ============ AUTH ============ */
+document.getElementById('googleBtn').onclick = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e){ showLoginError('Ошибка входа: ' + e.message); }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if(!user){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    return;
+  }
+  currentUser = user;
+  document.getElementById('userEmail').textContent = user.email || '';
+  const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+  if(!adminDoc.exists()){
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    showLoginError(`Доступ только для организаторов.<br>Ваш UID: <div class="uid-box" onclick="navigator.clipboard.writeText('${user.uid}');this.textContent='Скопировано!'">${user.uid}</div><br>Передайте его администратору.`);
+    return;
+  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await loadInvites();
+});
+
+function showLoginError(msg){ const el = document.getElementById('loginError'); el.innerHTML = msg; el.style.display = 'block'; }
+function logout(){ signOut(auth); }
+window.logout = logout;
+
+/* ============ LOAD INVITES ============ */
+async function loadInvites(){
+  const panel = document.getElementById('panel');
+  panel.innerHTML = '<div class="spinner"></div><div class="loading-text">Загрузка приглашений...</div>';
+  try {
+    const q = query(collection(db, 'invitations'), orderBy('updatedAt', 'desc'));
+    const snap = await getDocs(q);
+    invites = [];
+    snap.forEach(d => invites.push({ id: d.id, ...d.data() }));
+    if(!invites.length){
+      panel.innerHTML = `
+        <div class="empty">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm0 16H5V5h14v14z"/></svg>
+          <div>Приглашений пока нет.</div>
+          <div style="margin-top:8px;font-size:12px">Создайте первое в <a href="index.html" style="color:var(--gold)">редакторе</a>.</div>
+        </div>`;
+      return;
+    }
+    selectedInviteId = invites[0].id;
+    renderInviteSelector();
+    renderTab();
+  } catch(e){
+    panel.innerHTML = `<div class="empty">Ошибка: ${e.message}</div>`;
+  }
+}
+
+function renderInviteSelector(){
+  const panel = document.getElementById('panel');
+  const opts = invites.map(i => `<option value="${i.id}" ${i.id===selectedInviteId?'selected':''}>${i.names?.name1||'?'} & ${i.names?.name2||'?'} — ${i.id}</option>`).join('');
+  const selector = `
+    <div style="margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="font-size:12px;color:var(--muted)">Приглашение:</label>
+      <select id="inviteSelect" onchange="selectInvite(this.value)" style="flex:1;min-width:200px;padding:9px 12px;background:#100e0c;border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:13px;font-family:inherit">
+        ${opts}
+      </select>
+      <a href="invite.html?id=${selectedInviteId}" target="_blank" class="btn-sm" style="text-decoration:none">Открыть</a>
+    </div>`;
+  return selector;
+}
+
+window.selectInvite = (id) => {
+  selectedInviteId = id;
+  cleanupListeners();
+  renderTab();
+};
+
+function cleanupListeners(){
+  if(unsubRsvp){ unsubRsvp(); unsubRsvp = null; }
+  if(unsubWishes){ unsubWishes(); unsubWishes = null; }
+}
+
+/* ============ TABS ============ */
+window.switchTab = (tab) => {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  cleanupListeners();
+  renderTab();
+};
+
+function renderTab(){
+  if(!selectedInviteId){ loadInvites(); return; }
+  if(currentTab === 'rsvp') renderRsvp();
+  else if(currentTab === 'wishes') renderWishes();
+  else if(currentTab === 'storage') renderStorage();
+}
+
+/* ============ RSVP ============ */
+function renderRsvp(){
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    ${renderInviteSelector()}
+    <div class="panel-title">Ответы на приглашение</div>
+    <div id="rsvpContent"><div class="spinner"></div></div>`;
+
+  const q = query(collection(db, 'rsvps'), where('inviteId', '==', selectedInviteId));
+  unsubRsvp = onSnapshot(q, snap => {
+    const list = [];
+    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    list.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+
+    const yes = list.filter(r => r.attending);
+    const no = list.filter(r => !r.attending);
+    const totalGuests = yes.reduce((s,r) => s + (parseInt(r.guests)||0), 0);
+
+    const content = document.getElementById('rsvpContent');
+    if(!content) return;
+
+    if(!list.length){
+      content.innerHTML = `<div class="empty">Пока нет ответов. Гости ещё не открыли приглашение.</div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="stat-row">
+        <div class="stat"><div class="num">${yes.length}</div><div class="lbl">Придут</div></div>
+        <div class="stat"><div class="num">${totalGuests}</div><div class="lbl">Всего гостей</div></div>
+        <div class="stat"><div class="num">${no.length}</div><div class="lbl">Не придут</div></div>
+      </div>
+      ${list.map(r => `
+        <div class="item">
+          <div class="item-main">
+            <div class="item-name">${escapeHtml(r.name)}</div>
+            <div class="item-meta">
+              <span class="badge-status ${r.attending?'badge-yes':'badge-no'}">${r.attending?'Придёт':'Не придёт'}</span>
+              ${r.attending ? ` · ${r.guests} ${plural(r.guests,'гость','гостя','гостей')}` : ''}
+              ${r.createdAt?.seconds ? ' · ' + formatDate(r.createdAt.seconds) : ''}
+            </div>
+          </div>
+        </div>`).join('')}
+    `;
+    const badge = document.getElementById('rsvpBadge');
+    if(badge && list.length){ badge.textContent = list.length; badge.style.display = 'inline-block'; }
+  }, err => {
+    const content = document.getElementById('rsvpContent');
+    if(content) content.innerHTML = `<div class="empty">Ошибка: ${err.message}</div>`;
+  });
+}
+
+/* ============ WISHES ============ */
+function renderWishes(){
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    ${renderInviteSelector()}
+    <div class="panel-title">Пожелания гостей</div>
+    <div id="wishesContent"><div class="spinner"></div></div>`;
+
+  const q = query(collection(db, 'wishes'), where('inviteId', '==', selectedInviteId));
+  unsubWishes = onSnapshot(q, snap => {
+    const all = [];
+    snap.forEach(d => all.push({ id: d.id, ...d.data() }));
+    const pending = all.filter(w => !w.approved);
+    const approved = all.filter(w => w.approved);
+    pending.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    approved.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+
+    const content = document.getElementById('wishesContent');
+    if(!content) return;
+
+    if(!all.length){
+      content.innerHTML = `<div class="empty">Пожеланий пока нет.</div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="stat-row">
+        <div class="stat"><div class="num">${pending.length}</div><div class="lbl">На модерации</div></div>
+        <div class="stat"><div class="num">${approved.length}</div><div class="lbl">Опубликовано</div></div>
+      </div>
+      ${pending.length ? `<div style="margin:18px 0 10px;font-size:13px;color:var(--gold);font-weight:600">На модерации</div>${pending.map(w => wishCard(w, true)).join('')}` : ''}
+      ${approved.length ? `<div style="margin:18px 0 10px;font-size:13px;color:var(--muted);font-weight:600">Опубликованные</div>${approved.map(w => wishCard(w, false)).join('')}` : ''}
+    `;
+    const badge = document.getElementById('wishesBadge');
+    if(badge && pending.length){ badge.textContent = pending.length; badge.style.display = 'inline-block'; }
+    else if(badge) badge.style.display = 'none';
+  }, err => {
+    const content = document.getElementById('wishesContent');
+    if(content) content.innerHTML = `<div class="empty">Ошибка: ${err.message}</div>`;
+  });
+}
+
+function wishCard(w, pending){
+  return `
+    <div class="item">
+      <div class="item-main">
+        <div class="item-name">${escapeHtml(w.name)}</div>
+        <div class="item-text">${escapeHtml(w.text)}</div>
+        <div class="item-meta" style="margin-top:6px">${w.createdAt?.seconds ? formatDate(w.createdAt.seconds) : ''}</div>
+      </div>
+      <div class="item-actions">
+        ${pending ? `<button class="btn-sm green" onclick="approveWish('${w.id}')">Опубликовать</button>` : ''}
+        <button class="btn-sm red" onclick="deleteWish('${w.id}')">Удалить</button>
+      </div>
+    </div>`;
+}
+
+window.approveWish = async (id) => {
+  try { await updateDoc(doc(db, 'wishes', id), { approved: true }); toast('Опубликовано'); }
+  catch(e){ toast('Ошибка: ' + e.message); }
+};
+window.deleteWish = async (id) => {
+  if(!confirm('Удалить пожелание?')) return;
+  try { await deleteDoc(doc(db, 'wishes', id)); toast('Удалено'); }
+  catch(e){ toast('Ошибка: ' + e.message); }
+};
+
+/* ============ STORAGE ============ */
+async function renderStorage(){
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    ${renderInviteSelector()}
+    <div class="panel-title">Файлы приглашения в Firebase Storage</div>
+    <div id="storageContent"><div class="spinner"></div><div class="loading-text">Загрузка...</div></div>`;
+
+  const content = document.getElementById('storageContent');
+  try {
+    const folderRef = ref(storage, `invitations/${selectedInviteId}`);
+    const result = await listAll(folderRef);
+    const files = [];
+
+    const collect = async (items) => {
+      for(const item of items){
+        try {
+          const meta = await getMetadata(item);
+          files.push({ ref: item, name: item.name, size: meta.size, type: meta.contentType, path: item.fullPath });
+        } catch(e){ files.push({ ref: item, name: item.name, size: 0, type: 'unknown', path: item.fullPath }); }
+      }
+    };
+    await collect(result.items);
+    for(const prefix of result.prefixes){
+      const sub = await listAll(prefix);
+      await collect(sub.items);
+    }
+
+    const total = files.reduce((s,f) => s + f.size, 0);
+    const limit = 5 * 1024 * 1024 * 1024;
+    const pct = Math.min(100, (total / limit) * 100);
+
+    if(!files.length){
+      content.innerHTML = `<div class="empty">Файлов нет. Загрузите фото и музыку в редакторе.</div>`;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="stat-row">
+        <div class="stat"><div class="num">${files.length}</div><div class="lbl">Файлов</div></div>
+        <div class="stat"><div class="num">${formatSize(total)}</div><div class="lbl">Занято</div></div>
+      </div>
+      <div class="storage-bar"><div class="storage-bar-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:16px">${formatSize(total)} из 5 ГБ (${pct.toFixed(2)}%)</div>
+      ${files.map(f => `
+        <div class="file-row">
+          <div class="file-icon">${fileExt(f.name)}</div>
+          <div class="file-info">
+            <div class="file-name">${escapeHtml(f.name)}</div>
+            <div class="file-meta">${formatSize(f.size)} · ${f.type||'—'}</div>
+          </div>
+          <button class="btn-sm red" onclick="deleteFile('${f.path.replace(/'/g,'\\\'')}')">Удалить</button>
+        </div>`).join('')}
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+        <button class="btn-sm red" onclick="deleteAllFiles()">Удалить все файлы приглашения</button>
+        <p style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">После удаления файлов ссылки в приглашении станут нерабочими. Удаляйте после мероприятия.</p>
+      </div>
+    `;
+  } catch(e){
+    content.innerHTML = `<div class="empty">Ошибка: ${e.message}<br><br>Убедитесь, что правила Storage опубликованы.</div>`;
+  }
+}
+
+window.deleteFile = async (path) => {
+  if(!confirm('Удалить файл?')) return;
+  try {
+    await deleteObject(ref(storage, path));
+    toast('Файл удалён');
+    renderStorage();
+  } catch(e){ toast('Ошибка: ' + e.message); }
+};
+
+window.deleteAllFiles = async () => {
+  if(!confirm('Удалить ВСЕ файлы этого приглашения? Это необратимо.')) return;
+  const content = document.getElementById('storageContent');
+  content.innerHTML = '<div class="spinner"></div><div class="loading-text">Удаление...</div>';
+  try {
+    const folderRef = ref(storage, `invitations/${selectedInviteId}`);
+    const result = await listAll(folderRef);
+    const deleteAll = async (items) => { for(const item of items){ try{ await deleteObject(item); }catch(e){} } };
+    await deleteAll(result.items);
+    for(const prefix of result.prefixes){
+      const sub = await listAll(prefix);
+      await deleteAll(sub.items);
+    }
+    toast('Все файлы удалены');
+    renderStorage();
+  } catch(e){ toast('Ошибка: ' + e.message); renderStorage(); }
+};
+
+/* ============ HELPERS ============ */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function formatDate(sec){ const d = new Date(sec*1000); return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'}); }
+function formatSize(bytes){ if(bytes < 1024) return bytes + ' Б'; if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' КБ'; if(bytes < 1024*1024*1024) return (bytes/1024/1024).toFixed(1) + ' МБ'; return (bytes/1024/1024/1024).toFixed(2) + ' ГБ'; }
+function plural(n, one, few, many){ n = Math.abs(n) % 100; const n1 = n % 10; if(n > 10 && n < 20) return many; if(n1 > 1 && n1 < 5) return few; if(n1 === 1) return one; return many; }
+function fileExt(name){ const ext = (name.split('.').pop()||'').toUpperCase(); return ext.slice(0,4); }
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2800); }
+</script>
+</body>
+</html>

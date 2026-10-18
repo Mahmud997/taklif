@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shaqyrtu — Редактор приглашений</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0b0a; --card:#161310; --inner:#1e1a16; --gold:#c9a84c; --gold-h:#dfc06a;
+  --gold-soft:rgba(201,168,76,.14); --gold-glow:rgba(201,168,76,.35);
+  --text:#f0e8da; --muted:#9a8f80; --border:#2e2820; --border-h:#4a4034;
+  --r:14px; --r-sm:9px; --sh:0 12px 40px rgba(0,0,0,.5);
+  --tr:.22s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse 90% 60% at 50% -30%,rgba(201,168,76,.08),transparent),
+                   radial-gradient(ellipse 50% 40% at 100% 100%,rgba(201,168,76,.04),transparent);
+  color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+/* ===== LOGIN ===== */
+.login-screen{
+  position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;
+  justify-content:center;z-index:500;padding:20px;
+}
+.login-card{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:40px 34px;max-width:400px;width:100%;text-align:center;
+  box-shadow:var(--sh);
+}
+.login-card h1{font-size:20px;letter-spacing:5px;color:var(--gold);margin-bottom:6px;font-weight:600}
+.login-card p{font-size:13px;color:var(--muted);margin-bottom:26px;line-height:1.6}
+.btn-google{
+  display:flex;align-items:center;justify-content:center;gap:12px;width:100%;
+  padding:13px;border-radius:28px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),#b8923e);color:#0c0b0a;
+  font-weight:600;font-size:14px;transition:all var(--tr);
+  box-shadow:0 4px 18px var(--gold-glow);
+}
+.btn-google:hover{background:linear-gradient(135deg,var(--gold-h),var(--gold));transform:translateY(-1px)}
+.btn-google svg{width:20px;height:20px}
+.login-error{margin-top:16px;font-size:12.5px;color:#e57373;line-height:1.5}
+.uid-box{
+  margin-top:16px;padding:12px;background:#100e0c;border:1px solid var(--border);
+  border-radius:8px;font-family:monospace;font-size:11px;word-break:break-all;
+  color:var(--gold);cursor:pointer;transition:border-color var(--tr);
+}
+.uid-box:hover{border-color:var(--gold)}
+/* ===== HEADER ===== */
+header{
+  background:rgba(22,19,16,.88);backdrop-filter:blur(16px);
+  padding:13px 28px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:100;gap:16px;
+}
+header h1{font-size:17px;color:var(--gold);letter-spacing:4px;font-weight:600;white-space:nowrap}
+.header-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.header-user{font-size:12px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.header-btn{
+  background:transparent;border:1px solid var(--border);color:var(--text);
+  padding:7px 13px;border-radius:var(--r-sm);font-size:12px;font-weight:500;
+  cursor:pointer;transition:all var(--tr);white-space:nowrap;
+}
+.header-btn:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.header-btn.primary{
+  background:linear-gradient(135deg,var(--gold),#b8923e);color:#0c0b0a;
+  border-color:transparent;font-weight:600;box-shadow:0 2px 14px var(--gold-glow);
+}
+.header-btn.primary:hover{background:linear-gradient(135deg,var(--gold-h),var(--gold));transform:translateY(-1px)}
+.header-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ===== LAYOUT ===== */
+.main{display:flex;flex:1;gap:26px;padding:26px;max-width:1560px;margin:0 auto;width:100%}
+.editor{
+  flex:1.35;background:var(--card);border-radius:18px;padding:20px;
+  border:1px solid var(--border);max-height:calc(100vh - 105px);overflow-y:auto;
+  display:flex;flex-direction:column;scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+.editor::-webkit-scrollbar{width:5px}
+.editor::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.editor-content{flex:1}
+/* ===== ACCORDION ===== */
+.acc{background:var(--inner);border:1px solid var(--border);border-radius:var(--r);margin-bottom:7px;overflow:hidden;transition:border-color var(--tr),box-shadow var(--tr)}
+.acc.active{border-color:rgba(201,168,76,.4);box-shadow:0 0 0 1px rgba(201,168,76,.08),0 4px 20px rgba(0,0,0,.2)}
+.acc-h{padding:14px 16px;font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:linear-gradient(180deg,#27221c,#1e1a16);user-select:none;transition:background var(--tr)}
+.acc-h:hover{background:linear-gradient(180deg,#2e2820,#27221c)}
+.acc-h .sub{font-size:10.5px;color:var(--muted);font-weight:400;display:block;margin-top:2px;letter-spacing:.3px}
+.acc-h .icon{font-size:16px;color:var(--muted);transition:transform .3s,color var(--tr),background var(--tr);width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(0,0,0,.2);flex-shrink:0}
+.acc.active .acc-h .icon{transform:rotate(45deg);color:var(--gold);background:var(--gold-soft)}
+.acc-c{padding:16px;display:none;border-top:1px solid var(--border);animation:slide .28s ease}
+.acc.active .acc-c{display:block}
+@keyframes slide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+/* ===== FORMS ===== */
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;font-weight:500;letter-spacing:.3px}
+.fg input[type=text],.fg input[type=url],.fg input[type=email],.fg select,.fg textarea{
+  width:100%;padding:9px 12px;background:#100e0c;border:1px solid var(--border);
+  border-radius:var(--r-sm);color:var(--text);font-size:13px;font-family:inherit;
+  transition:border-color var(--tr),box-shadow var(--tr);
+}
+.fg input:hover,.fg select:hover,.fg textarea:hover{border-color:var(--border-h)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+.fg textarea{resize:vertical;min-height:68px;line-height:1.5}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.color-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:7px 10px;border-radius:var(--r-sm);transition:background var(--tr)}
+.color-row:hover{background:rgba(0,0,0,.18)}
+.color-row label{font-size:12.5px;margin:0;font-weight:400}
+.color-row input[type=color]{border:2px solid var(--border);width:32px;height:32px;border-radius:8px;cursor:pointer;background:transparent;padding:2px;transition:border-color var(--tr)}
+.color-row input[type=color]:hover{border-color:var(--gold)}
+.toggle{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;padding:3px 0}
+.toggle-l{font-size:13px;font-weight:500}
+.toggle-d{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.sw{position:relative;display:inline-block;width:42px;height:23px;flex-shrink:0}
+.sw input{opacity:0;width:0;height:0}
+.sl{position:absolute;cursor:pointer;inset:0;background:#3a342c;transition:.25s;border-radius:24px}
+.sl:before{position:absolute;content:"";height:17px;width:17px;left:3px;bottom:3px;background:#fff;transition:.25s;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+input:checked+.sl{background:var(--gold);box-shadow:0 0 14px var(--gold-glow)}
+input:checked+.sl:before{transform:translateX(19px)}
+/* ===== UPLOAD ===== */
+.upload{border:2px dashed var(--border);border-radius:var(--r-sm);padding:16px 12px;text-align:center;cursor:pointer;transition:all var(--tr);background:#100e0c;margin-bottom:8px}
+.upload:hover{border-color:var(--gold);background:rgba(201,168,76,.04)}
+.upload.has{border-style:solid;border-color:rgba(201,168,76,.3);padding:8px}
+.upload img,.upload video{max-width:100%;max-height:100px;border-radius:6px;display:block;margin:0 auto 6px;object-fit:cover}
+.upload .hint{font-size:11.5px;color:var(--muted)}
+.upload input[type=file]{display:none}
+.upload .progress{height:3px;background:var(--border);border-radius:2px;margin-top:8px;overflow:hidden}
+.upload .progress-bar{height:100%;background:var(--gold);width:0%;transition:width .3s}
+/* ===== CARDS ===== */
+.tpl-grid,.frm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.tpl,.frm{aspect-ratio:3/4;border-radius:8px;border:2px solid var(--border);cursor:pointer;overflow:hidden;position:relative;transition:all var(--tr);background:#100e0c}
+.tpl:hover,.frm:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.tpl.active,.frm.active{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-soft),0 4px 16px var(--gold-glow)}
+.tpl .mini,.frm .mini{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;text-align:center;padding:6px;gap:3px}
+.tpl .name,.frm .name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);font-size:9px;padding:3px;text-align:center}
+/* ===== SVG ICONS ===== */
+.icn{display:inline-flex;align-items:center;justify-content:center}
+.icn svg{width:100%;height:100%;display:block}
+.social-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.soc-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;background:#100e0c;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;transition:all var(--tr);color:var(--text);font-size:10px}
+.soc-btn:hover{border-color:var(--gold);background:var(--gold-soft);transform:translateY(-2px)}
+.soc-btn .icn{width:22px;height:22px}
+/* ===== STICKY ===== */
+.sticky{position:sticky;bottom:0;background:linear-gradient(180deg,transparent,var(--card) 18%);padding:18px 0 4px;display:flex;gap:10px;margin-top:18px;z-index:10}
+.btn-p{flex:2;background:linear-gradient(135deg,var(--gold),#b8923e);color:#0c0b0a;border:none;padding:13px;border-radius:28px;font-weight:600;font-size:13.5px;cursor:pointer;transition:all var(--tr);box-shadow:0 4px 18px var(--gold-glow)}
+.btn-p:hover{background:linear-gradient(135deg,var(--gold-h),var(--gold));transform:translateY(-1px)}
+.btn-p:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-s{flex:1;background:transparent;color:var(--text);border:1px solid var(--border);padding:13px;border-radius:28px;font-size:13.5px;font-weight:500;cursor:pointer;transition:all var(--tr)}
+.btn-s:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+/* ===== PREVIEW ===== */
+.preview{flex:.85;display:flex;flex-direction:column;align-items:center;gap:12px;position:sticky;top:85px;max-height:calc(100vh - 100px)}
+.preview-label{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-weight:500}
+.phone{width:330px;height:660px;background:#111;border-radius:42px;border:3px solid #2a2a2a;box-shadow:var(--sh),0 0 0 1px #1a1a1a,inset 0 0 0 2px #0a0a0a,0 0 60px rgba(201,168,76,.08);overflow:hidden;position:relative;flex-shrink:0}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:105px;height:25px;background:#111;border-radius:0 0 16px 16px;z-index:10}
+.notch:after{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;background:#333;border-radius:2px}
+.screen{width:100%;height:100%;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.12) transparent;scroll-behavior:smooth}
+.screen::-webkit-scrollbar{width:3px}
+.screen::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
+.sec{padding:22px 18px;text-align:center;border-bottom:1px solid rgba(0,0,0,.05);position:relative}
+.sec:last-child{border-bottom:none}
+.sec-title{font-size:10.5px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:11px}
+.sec-names{font-family:'Playfair Display',serif;font-size:25px;font-weight:600;line-height:1.35;margin:12px 0}
+.sec-msg{font-size:12.5px;font-style:italic;opacity:.85;margin:8px 0;line-height:1.5}
+.sec-photo{width:88px;height:88px;border-radius:50%;object-fit:cover;margin:10px auto;display:block;border:3px solid;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.sec-btn{display:inline-block;padding:10px 24px;border-radius:24px;font-size:12.5px;font-weight:500;border:none;cursor:pointer;margin-top:8px;color:#fff;text-decoration:none;box-shadow:0 3px 14px rgba(0,0,0,.15)}
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+.gallery img{width:100%;height:78px;object-fit:cover;border-radius:6px}
+.cover-video{width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin:8px 0}
+/* ===== CONFETTI / SPARKLE ===== */
+.spark{position:fixed;width:5px;height:5px;background:var(--gold);border-radius:50%;pointer-events:none;z-index:9999;animation:sparkAnim 1.6s ease-out forwards}
+@keyframes sparkAnim{0%{opacity:1;transform:scale(0) translateY(0)}50%{opacity:1;transform:scale(1.3) translateY(-30px)}100%{opacity:0;transform:scale(0) translateY(-60px)}}
+/* ===== TOAST ===== */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:#27221c;color:var(--text);padding:12px 26px;border-radius:30px;border:1px solid rgba(201,168,76,.4);font-size:13px;font-weight:500;z-index:1000;opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.45)}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+/* ===== MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:26px;max-width:440px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:var(--sh);animation:modalIn .28s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal h3{color:var(--gold);margin-bottom:12px;font-size:17px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+.modal .link-box{background:#100e0c;border:1px solid var(--border);border-radius:8px;padding:12px;font-family:monospace;font-size:11.5px;word-break:break-all;color:var(--gold);margin:12px 0;cursor:pointer}
+/* ===== CUSTOM SECTION EDITOR ===== */
+.custom-ed{background:#100e0c;border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;margin-bottom:8px}
+.custom-ed label{font-size:11px;color:var(--muted);display:block;margin:8px 0 4px}
+.custom-ed input,.custom-ed textarea{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12.5px;font-family:inherit}
+.custom-ed .row{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.custom-ed .rm{background:#e57373;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
+/* ===== BLOCKS ===== */
+.block-item{display:flex;align-items:center;justify-content:space-between;background:#100e0c;border:1px solid var(--border);padding:10px 12px;border-radius:var(--r-sm);margin-bottom:5px;transition:border-color var(--tr)}
+.block-item:hover{border-color:var(--border-h)}
+.block-item.locked{opacity:.6}
+.btn-mini{background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;cursor:pointer;font-size:11px;transition:all var(--tr);line-height:1.3}
+.btn-mini:hover:not(:disabled){border-color:var(--gold);color:var(--gold);background:var(--gold-soft)}
+.btn-mini:disabled{opacity:.25;cursor:not-allowed}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:var(--gold);border-radius:50%;cursor:pointer;box-shadow:0 0 8px var(--gold-glow)}
+/* ===== RESPONSIVE ===== */
+@media(max-width:960px){
+  .main{flex-direction:column;padding:12px;gap:18px}
+  .editor{max-height:none;order:2}
+  .preview{position:relative;top:0;order:1;max-height:none}
+  .phone{width:290px;height:580px;border-radius:36px}
+  header{padding:10px 14px}
+  header h1{font-size:14px;letter-spacing:2px}
+  .header-btn{padding:6px 9px;font-size:11px}
+  .frow{grid-template-columns:1fr}
+  .tpl-grid,.frm-grid{grid-template-columns:repeat(2,1fr)}
+  .social-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>SHAQYRTU</h1>
+    <p>Вход для организаторов.<br>Только админы могут создавать приглашения.</p>
+    <button class="btn-google" id="googleBtn">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.09A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.43.34-2.09V7.07H2.18A11 11 0 0 0 1 12c0 1.78.43 3.46 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+      Войти через Google
+    </button>
+    <div class="login-error" id="loginError" style="display:none"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <h1>SHAQYRTU</h1>
+    <div class="header-controls">
+      <span class="header-user" id="userEmail"></span>
+      <button class="header-btn" onclick="logout()">Выйти</button>
+      <button class="header-btn" onclick="resetAll()">Сбросить</button>
+      <button class="header-btn primary" onclick="saveInvite()" id="saveBtn">Сохранить</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="editor">
+      <div class="editor-content">
+
+        <!-- COVER -->
+        <div class="acc active">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Обложка <span class="sub">Имена, конверт, тема</span></div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <div class="frow">
+              <div class="fg"><label>Первый (жених) *</label><input type="text" id="name1" value="Арман" oninput="renderPreview()"></div>
+              <div class="fg"><label>Второй (невеста) *</label><input type="text" id="name2" value="Аружан" oninput="renderPreview()"></div>
+            </div>
+            <div class="toggle"><div><div class="toggle-l">Почётные свидетели</div><div class="toggle-d">Оба имени обязательны</div></div><label class="sw"><input type="checkbox" id="tWitnesses" onchange="toggleWitness();renderPreview()"><span class="sl"></span></label></div>
+            <div id="witnessFields" style="display:none">
+              <div class="frow">
+                <div class="fg"><input type="text" id="witness1" placeholder="Свидетель 1" oninput="renderPreview()"></div>
+                <div class="fg"><input type="text" id="witness2" placeholder="Свидетель 2" oninput="renderPreview()"></div>
+              </div>
+            </div>
+            <div class="toggle"><div><div class="toggle-l">Основное сообщение</div></div><label class="sw"><input type="checkbox" id="tMessage" checked onchange="renderPreview()"><span class="sl"></span></label></div>
+            <div class="fg"><input type="text" id="mainMessage" value="Приглашаем вас разделить с нами этот особенный день!" oninput="renderPreview()"></div>
+            <div class="toggle"><div><div class="toggle-l">Instagram молодожёнов</div></div><label class="sw"><input type="checkbox" id="tInsta" onchange="toggleInsta();renderPreview()"><span class="sl"></span></label></div>
+            <div class="fg" id="instaField" style="display:none"><input type="text" id="instaAccount" placeholder="@username" oninput="renderPreview()"></div>
+            <div class="fg">
+              <label>Стиль открытия (обёртка)</label>
+              <select id="wrapStyle" onchange="renderPreview()">
+                <option value="envelope">Конверт</option>
+                <option value="chest">Сундук</option>
+                <option value="oriental">Восточный ларец</option>
+                <option value="none">Без обёртки</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Визуальная тема</label>
+              <select id="themeSelect" onchange="applyTheme();renderPreview()">
+                <option value="light">Светлая классика</option>
+                <option value="dark" selected>Тёмная элегантность</option>
+                <option value="premium">Премиум золото</option>
+                <option value="rose">Розовое золото</option>
+                <option value="emerald">Изумруд</option>
+                <option value="minimal">Минимализм</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- TEMPLATES -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Шаблоны и рамки <span class="sub">Готовые стили и обрамления</span></div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <label style="font-size:11.5px;color:var(--muted);margin-bottom:8px;display:block">Шаблон оформления</label>
+            <div class="tpl-grid" id="tplGrid"></div>
+            <label style="font-size:11.5px;color:var(--muted);margin:12px 0 8px;display:block">Декоративная рамка</label>
+            <div class="frm-grid" id="frmGrid"></div>
+          </div>
+        </div>
+
+        <!-- STYLES -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Шрифты, цвета и оформление</div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <div class="frow">
+              <div class="fg"><label>Шрифт заголовков</label>
+                <select id="fontTitle" onchange="renderPreview()">
+                  <option value="Playfair Display">Playfair Display</option>
+                  <option value="Cormorant Garamond">Cormorant Garamond</option>
+                  <option value="Georgia">Georgia</option>
+                </select>
+              </div>
+              <div class="fg"><label>Шрифт текста</label>
+                <select id="fontText" onchange="renderPreview()">
+                  <option value="Inter">Inter</option>
+                  <option value="Roboto">Roboto</option>
+                </select>
+              </div>
+            </div>
+            <div class="color-row"><label>Акцентный цвет</label><input type="color" id="cAccent" value="#c9a84c" onchange="renderPreview()"></div>
+            <div class="color-row"><label>Цвет заголовков</label><input type="color" id="cTitle" value="#c9a84c" onchange="renderPreview()"></div>
+            <div class="color-row"><label>Цвет текста</label><input type="color" id="cText" value="#e6dfd5" onchange="renderPreview()"></div>
+            <div class="color-row"><label>Цвет фона</label><input type="color" id="cBg" value="#1a1714" onchange="renderPreview()"></div>
+            <div class="toggle"><div><div class="toggle-l">Фото на обложке</div></div><label class="sw"><input type="checkbox" id="tPhoto" onchange="togglePhotoZone();renderPreview()"><span class="sl"></span></label></div>
+            <div id="photoZone" class="upload" onclick="document.getElementById('photoInput').click()" style="display:none">
+              <input type="file" id="photoInput" accept="image/*" onchange="uploadFile(event,'cover')">
+              <div class="hint">Загрузить фото</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EFFECTS -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Прокрутка и эффекты</div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <div class="fg"><label>Стиль прокрутки</label>
+              <select id="scrollStyle" onchange="applyScrollStyle()">
+                <option value="smooth">Плавная</option>
+                <option value="auto">Мгновенная</option>
+                <option value="snap">По секциям (snap)</option>
+              </select>
+            </div>
+            <div class="fg"><label>Скорость анимации (мс)</label>
+              <input type="range" id="revealSpeed" min="200" max="1200" value="600" oninput="document.getElementById('revealSpeedVal').textContent=this.value+' мс';renderPreview()">
+              <div style="font-size:11px;color:var(--muted);margin-top:4px"><span id="revealSpeedVal">600 мс</span></div>
+            </div>
+            <div class="toggle"><div><div class="toggle-l">Автопрокрутка</div><div class="toggle-d">Секции листаются автоматически</div></div><label class="sw"><input type="checkbox" id="tAutoScroll" checked><span class="sl"></span></label></div>
+            <div class="fg"><label>Интервал автопрокрутки (сек)</label>
+              <input type="range" id="autoScrollSec" min="3" max="15" value="6" oninput="document.getElementById('autoScrollVal').textContent=this.value+' с'">
+              <div style="font-size:11px;color:var(--muted);margin-top:4px"><span id="autoScrollVal">6 с</span></div>
+            </div>
+            <div class="toggle"><div><div class="toggle-l">Блестки</div></div><label class="sw"><input type="checkbox" id="tSparkles" checked onchange="renderPreview()"><span class="sl"></span></label></div>
+          </div>
+        </div>
+
+        <!-- MUSIC -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Фоновая музыка</div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <div class="toggle"><div><div class="toggle-l">Включить музыку</div><div class="toggle-d">Играет при открытии конверта</div></div><label class="sw"><input type="checkbox" id="tMusic" onchange="toggleMusicUI()"><span class="sl"></span></label></div>
+            <div id="musicFields" style="display:none">
+              <div class="upload" id="musicZone" onclick="document.getElementById('musicInput').click()">
+                <input type="file" id="musicInput" accept="audio/*" onchange="uploadFile(event,'music')">
+                <div class="hint">Загрузить аудио (MP3, WAV)</div>
+              </div>
+              <div class="fg"><label>Громкость</label><input type="range" id="musicVol" min="0" max="100" value="60" oninput="document.getElementById('musicVolVal').textContent=this.value+'%'"><div style="font-size:11px;color:var(--muted);margin-top:4px"><span id="musicVolVal">60%</span></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Мини-видео</div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <div class="toggle"><div><div class="toggle-l">Видео на обложке</div></div><label class="sw"><input type="checkbox" id="tVideo" onchange="toggleVideoUI();renderPreview()"><span class="sl"></span></label></div>
+            <div id="videoFields" style="display:none">
+              <div class="upload" id="videoZone" onclick="document.getElementById('videoInput').click()">
+                <input type="file" id="videoInput" accept="video/*" onchange="uploadFile(event,'video')">
+                <div class="hint">Загрузить видео (MP4, до 15 сек)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCKS -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')">
+            <div>Порядок разделов</div><span class="icon">+</span>
+          </div>
+          <div class="acc-c">
+            <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Стрелки меняют порядок. Обложка и RSVP закреплены.</p>
+            <div id="blocksCtrl"></div>
+          </div>
+        </div>
+
+        <!-- DATE -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Место, дата и время</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div class="fg"><label>Дата и время</label><input type="text" id="eventDate" value="25 Октября 2026, 18:00" oninput="renderPreview()"></div>
+            <div class="fg"><label>Адрес / место</label><input type="text" id="eventPlace" value="г. Алматы, Ресторан «Grand Ballroom»" oninput="renderPreview()"></div>
+          </div>
+        </div>
+
+        <!-- TRANSPORT -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Транспорт</div><span class="icon">+</span></div>
+          <div class="acc-c"><div class="fg"><textarea id="transportInfo" rows="3" oninput="renderPreview()">Автобус от центральной площади в 17:00. Такси: +7 777 000 00 00.</textarea></div></div>
+        </div>
+
+        <!-- GUESTS -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>О гостях</div><span class="icon">+</span></div>
+          <div class="acc-c"><div class="fg"><textarea id="guestsInfo" rows="3" oninput="renderPreview()">Дети приветствуются. Дресс-код: Black Tie. Вегетарианское меню по запросу.</textarea></div></div>
+        </div>
+
+        <!-- LOVE STORY -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Наша история</div><span class="icon">+</span></div>
+          <div class="acc-c"><div class="fg"><textarea id="loveStoryInfo" rows="4" oninput="renderPreview()">Наша история началась в 2024 году. Мы прошли через многое и готовы начать новый этап вместе.</textarea></div></div>
+        </div>
+
+        <!-- GIFTS -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Подарки</div><span class="icon">+</span></div>
+          <div class="acc-c"><div class="fg"><textarea id="giftsInfo" rows="2" oninput="renderPreview()">Ваше присутствие — лучший подарок. Kaspi: 0000 0000 0000 0000</textarea></div></div>
+        </div>
+
+        <!-- VENUE -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Карта и место</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div class="fg"><label>Название места</label><input type="text" id="venueName" value="Ресторан «Grand Ballroom»" oninput="renderPreview()"></div>
+            <div class="fg"><label>Ссылка на карту</label><input type="url" id="venueMapLink" value="https://2gis.kz" oninput="renderPreview()"></div>
+            <div class="fg"><label>Изображение карты</label>
+              <div class="upload" id="mapZone" onclick="document.getElementById('mapInput').click()">
+                <input type="file" id="mapInput" accept="image/*" onchange="uploadFile(event,'map')">
+                <div class="hint">Загрузить карту</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GALLERY -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Галерея</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:10px">До 6 фото</p>
+            <div id="galleryUploads" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+            <button class="btn-s" style="width:100%;margin-top:8px;padding:10px;border-radius:10px" onclick="addGallerySlot()">+ Добавить фото</button>
+          </div>
+        </div>
+
+        <!-- SEATING -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Распределение столов</div><span class="icon">+</span></div>
+          <div class="acc-c"><div class="fg"><textarea id="seatingInfo" rows="3" oninput="renderPreview()">Стол 1: Родственники
+Стол 2: Друзья
+Стол 3: Коллеги</textarea></div></div>
+        </div>
+
+        <!-- WISHES -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Пожелания гостей</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div class="toggle"><div><div class="toggle-l">Раздел пожеланий</div><div class="toggle-d">Гости оставляют пожелания после проверки</div></div><label class="sw"><input type="checkbox" id="tWishes" checked onchange="renderPreview()"><span class="sl"></span></label></div>
+            <div class="fg"><label>Заголовок раздела</label><input type="text" id="wishesTitle" value="Пожелания гостей" oninput="renderPreview()"></div>
+            <div class="fg"><label>Текст после отправки</label><input type="text" id="wishesThanks" value="Спасибо! Ваше пожелание появится после проверки организатором." oninput="renderPreview()"></div>
+          </div>
+        </div>
+
+        <!-- RSVP -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>RSVP — подтверждение</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div class="fg"><label>Текст кнопки</label><input type="text" id="rsvpText" value="Подтвердить присутствие" oninput="renderPreview()"></div>
+            <div class="fg"><label>Заголовок формы</label><input type="text" id="rsvpTitle" value="Подтверждение присутствия" oninput="renderPreview()"></div>
+          </div>
+        </div>
+
+        <!-- SOCIAL -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Поделиться</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div class="toggle"><div><div class="toggle-l">Кнопки «Поделиться»</div></div><label class="sw"><input type="checkbox" id="tSocial" checked onchange="renderPreview()"><span class="sl"></span></label></div>
+            <div class="fg" style="margin-top:12px"><label>Текст для репоста</label><textarea id="shareText" rows="2" oninput="renderPreview()">Приглашаю вас на нашу свадьбу! Откройте приглашение:</textarea></div>
+          </div>
+        </div>
+
+        <!-- CUSTOM -->
+        <div class="acc">
+          <div class="acc-h" onclick="this.parentElement.classList.toggle('active')"><div>Свои разделы</div><span class="icon">+</span></div>
+          <div class="acc-c">
+            <div id="customEditor"></div>
+            <button class="btn-s" type="button" style="width:100%;margin-top:8px;padding:10px;border-radius:10px" onclick="addCustomSection()">+ Добавить раздел</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="sticky">
+        <button class="btn-s" onclick="resetAll()">Сбросить</button>
+        <button class="btn-p" id="saveBtn2" onclick="saveInvite()">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="preview-label">Предпросмотр</div>
+      <div class="phone"><div class="notch"></div><div class="screen" id="phoneScreen"></div></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;justify-content:center">
+        <button class="header-btn" onclick="showLink()">Скопировать ссылку</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="linkModal">
+  <div class="modal">
+    <h3>Ссылка на приглашение</h3>
+    <p>Отправьте её гостям. Она откроет приглашение с конвертом и музыкой.</p>
+    <div class="link-box" id="inviteLinkBox" onclick="copyLink()">—</div>
+    <p style="font-size:11.5px">После публикации на GitHub Pages ссылка будет работать у всех. Пока не опубликовано — откройте локально.</p>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="btn-p" style="flex:1" onclick="copyLink()">Копировать</button>
+      <button class="btn-s" style="flex:1" onclick="document.getElementById('linkModal').classList.remove('show')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { firebaseConfig } from "./firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+let currentUser = null;
+let isAdmin = false;
+let inviteId = null;
+let images = { cover:null, map:null, gallery:[] };
+let musicUrl = null, videoUrl = null;
+let currentTemplate = 'classic', currentFrame = 'none';
+let customSections = [];
+let blocks = [
+  { id:'cover', label:'Обложка', enabled:true, locked:true },
+  { id:'date', label:'Дата и место', enabled:true },
+  { id:'transport', label:'Транспорт', enabled:true },
+  { id:'aboutGuests', label:'О гостях', enabled:true },
+  { id:'loveStory', label:'Наша история', enabled:true },
+  { id:'gallery', label:'Галерея', enabled:true },
+  { id:'gifts', label:'Подарки', enabled:true },
+  { id:'venue', label:'Карта места', enabled:true },
+  { id:'seating', label:'Рассадка', enabled:true },
+  { id:'wishes', label:'Пожелания', enabled:true },
+  { id:'rsvp', label:'RSVP', enabled:true, locked:true },
+  { id:'social', label:'Поделиться', enabled:true }
+];
+
+const themes = {
+  light:{bg:'#fdfbf7',text:'#333',title:'#8c6d3b',accent:'#c9a84c'},
+  dark:{bg:'#1a1714',text:'#e6dfd5',title:'#c9a84c',accent:'#c9a84c'},
+  premium:{bg:'#1c1814',text:'#f0e6d3',title:'#d4af37',accent:'#d4af37'},
+  rose:{bg:'#fdf6f5',text:'#4a3030',title:'#b76e79',accent:'#c9a0a0'},
+  emerald:{bg:'#f4faf7',text:'#1e3a2f',title:'#2e6b4e',accent:'#3d8b6a'},
+  minimal:{bg:'#fff',text:'#222',title:'#111',accent:'#555'}
+};
+const tplPresets = {
+  classic:{theme:'light',font:'Playfair Display'},
+  luxury:{theme:'premium',font:'Cormorant Garamond'},
+  romantic:{theme:'rose',font:'Playfair Display'},
+  modern:{theme:'minimal',font:'Inter'},
+  oriental:{theme:'dark',font:'Cormorant Garamond'},
+  garden:{theme:'emerald',font:'Playfair Display'}
+};
+
+/* ============ AUTH ============ */
+document.getElementById('googleBtn').onclick = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e) { showLoginError('Ошибка входа: ' + e.message); }
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    return;
+  }
+  currentUser = user;
+  document.getElementById('userEmail').textContent = user.email || '';
+  const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+  if (!adminDoc.exists()) {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    showLoginError(`Доступ только для организаторов.<br>Ваш UID: <div class="uid-box" onclick="navigator.clipboard.writeText('${user.uid}');this.textContent='Скопировано!'">${user.uid}</div><br>Передайте его администратору.`);
+    return;
+  }
+  isAdmin = true;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  initEditor();
+});
+
+function showLoginError(msg){ const el=document.getElementById('loginError'); el.innerHTML=msg; el.style.display='block'; }
+function logout(){ signOut(auth); }
+
+/* ============ INIT ============ */
+function initEditor(){
+  renderTemplates();
+  renderFrames();
+  renderBlocks();
+  renderCustom();
+  updateGalleryUI();
+  applyTheme();
+  renderPreview();
+}
+
+/* ============ TEMPLATES ============ */
+function renderTemplates(){
+  const extra = [
+    {id:'editorial',name:'Editorial',bg:'#f4efe6',color:'#514438',mark:'Aa'},
+    {id:'terracotta',name:'Terracotta',bg:'#f3e3d9',color:'#9b5545',mark:'01'},
+    {id:'midnight',name:'Midnight',bg:'#111827',color:'#c7d2fe',mark:'✦'}
+  ];
+  const all = [
+    {id:'classic',name:'Классика',bg:'#fdfbf7',color:'#8c6d3b',mark:'А & А'},
+    {id:'luxury',name:'Люкс',bg:'#1a1714',color:'#d4af37',mark:'✦'},
+    {id:'romantic',name:'Романтика',bg:'#fdf6f5',color:'#b76e79',mark:'♡'},
+    {id:'modern',name:'Модерн',bg:'#fff',color:'#111',mark:'M'},
+    {id:'oriental',name:'Восток',bg:'#1c1814',color:'#c9a84c',mark:'۞'},
+    {id:'garden',name:'Сад',bg:'#f4faf7',color:'#2e6b4e',mark:'❀'},
+    ...extra
+  ];
+  const grid = document.getElementById('tplGrid');
+  grid.innerHTML = '';
+  all.forEach(t => {
+    const c = document.createElement('div');
+    c.className = 'tpl' + (t.id===currentTemplate?' active':'');
+    c.innerHTML = `<div class="mini" style="background:${t.bg};color:${t.color}"><span style="font-family:Georgia;font-size:14px">${t.mark}</span></div><div class="name">${t.name}</div>`;
+    c.onclick = () => selectTemplate(t.id);
+    grid.appendChild(c);
+  });
+}
+function selectTemplate(id){
+  currentTemplate = id;
+  const p = tplPresets[id];
+  if (p){ document.getElementById('themeSelect').value = p.theme; applyTheme(); document.getElementById('fontTitle').value = p.font; }
+  document.querySelectorAll('.tpl').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tpl').forEach(c => { if(c.querySelector('.name').textContent && c.dataset.id===id) c.classList.add('active'); });
+  renderTemplates();
+  renderPreview();
+  sparkles();
+}
+
+/* ============ FRAMES ============ */
+function renderFrames(){
+  const frames = [
+    {id:'none',name:'Без рамки'},
+    {id:'classic',name:'Классика'},
+    {id:'double',name:'Двойная'},
+    {id:'ornate',name:'Орнамент'},
+    {id:'floral',name:'Цветочная'},
+    {id:'gold',name:'Золотая'}
+  ];
+  const grid = document.getElementById('frmGrid');
+  grid.innerHTML = '';
+  frames.forEach(f => {
+    const c = document.createElement('div');
+    c.className = 'frm' + (f.id===currentFrame?' active':'');
+    let style = 'background:#1a1714;';
+    if(f.id==='classic') style += 'border:1px solid rgba(201,168,76,.4);';
+    if(f.id==='double') style += 'border:2px double rgba(201,168,76,.5);';
+    if(f.id==='ornate') style += 'border:2px solid #c9a84c;';
+    if(f.id==='gold') style += 'box-shadow:inset 0 0 0 3px #c9a84c;';
+    c.innerHTML = `<div class="mini" style="${style}"></div><div class="name">${f.name}</div>`;
+    c.onclick = () => { currentFrame = f.id; renderFrames(); renderPreview(); };
+    grid.appendChild(c);
+  });
+}
+
+/* ============ BLOCKS ============ */
+function renderBlocks(){
+  const host = document.getElementById('blocksCtrl');
+  host.innerHTML = '';
+  blocks.forEach((b, i) => {
+    const d = document.createElement('div');
+    d.className = 'block-item' + (b.locked?' locked':'');
+    d.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        ${b.locked?'<span>🔒</span>':`<input type="checkbox" ${b.enabled?'checked':''} onchange="toggleBlock(${i})" style="accent-color:var(--gold)">`}
+        <span style="font-size:12.5px">${b.label}</span>
+      </div>
+      ${!b.locked?`<div style="display:flex;gap:3px">
+        <button class="btn-mini" onclick="moveBlock(${i},-1)" ${i<=1?'disabled':''}>↑</button>
+        <button class="btn-mini" onclick="moveBlock(${i},1)" ${i>=blocks.length-2?'disabled':''}>↓</button>
+      </div>`:''}
+    `;
+    host.appendChild(d);
+  });
+}
+function toggleBlock(i){ blocks[i].enabled = !blocks[i].enabled; renderPreview(); }
+function moveBlock(i, dir){
+  const n = i + dir;
+  if(n < 1 || n >= blocks.length - 1) return;
+  if(blocks[n].locked) return;
+  [blocks[i], blocks[n]] = [blocks[n], blocks[i]];
+  renderBlocks(); renderPreview();
+}
+
+/* ============ CUSTOM ============ */
+function addCustomSection(title='',body=''){ customSections.push({title,body,enabled:true}); renderCustom(); renderPreview(); }
+function removeCustom(i){ customSections.splice(i,1); renderCustom(); renderPreview(); }
+function renderCustom(){
+  const host = document.getElementById('customEditor');
+  host.innerHTML = '';
+  if(!customSections.length){ host.innerHTML = '<p style="font-size:11px;color:var(--muted)">Пока нет своих разделов</p>'; return; }
+  customSections.forEach((s,i) => {
+    const d = document.createElement('div');
+    d.className = 'custom-ed';
+    d.innerHTML = `
+      <label>Заголовок</label>
+      <input type="text" value="${s.title.replace(/"/g,'&quot;')}" oninput="customSections[${i}].title=this.value;renderPreview()">
+      <label>Текст</label>
+      <textarea rows="2" oninput="customSections[${i}].body=this.value;renderPreview()">${s.body}</textarea>
+      <div class="row"><label style="margin:0"><input type="checkbox" ${s.enabled?'checked':''} onchange="customSections[${i}].enabled=this.checked;renderPreview()"> Показывать</label><button class="rm" onclick="removeCustom(${i})">Удалить</button></div>
+    `;
+    host.appendChild(d);
+  });
+}
+
+/* ============ UPLOADS ============ */
+async function uploadFile(event, type){
+  const file = event.target.files[0];
+  if(!file || !currentUser) return;
+  if(!inviteId) inviteId = generateId();
+  const path = `invitations/${inviteId}/${type}-${Date.now()}-${file.name}`;
+  const zone = document.getElementById(type==='cover'?'photoZone':type==='map'?'mapZone':type==='music'?'musicZone':type==='video'?'videoZone':null);
+  const hint = zone?.querySelector('.hint');
+  if(hint) hint.textContent = 'Загрузка...';
+  try {
+    const storageRef = ref(storage, path);
+    const task = uploadBytesResumable(storageRef, file);
+    task.on('state_changed', snap => {
+      const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+      if(hint) hint.textContent = `Загрузка ${pct}%`;
+    });
+    await task;
+    const url = await getDownloadURL(storageRef);
+    if(type==='cover'){ images.cover = url; if(hint) hint.innerHTML = `<img src="${url}" style="max-height:80px"><div class="hint">Заменить</div>`; }
+    if(type==='map'){ images.map = url; if(hint) hint.innerHTML = `<img src="${url}" style="max-height:80px"><div class="hint">Заменить</div>`; }
+    if(type==='music'){ musicUrl = url; if(hint) hint.textContent = 'Музыка загружена'; }
+    if(type==='video'){ videoUrl = url; if(hint) hint.innerHTML = `<video src="${url}" muted style="max-height:80px"></video><div class="hint">Заменить</div>`; }
+    renderPreview();
+    toast('Файл загружен');
+  } catch(e){ toast('Ошибка загрузки: ' + e.message); if(hint) hint.textContent = 'Ошибка'; }
+}
+function addGallerySlot(){
+  if(images.gallery.length >= 6){ toast('Максимум 6 фото'); return; }
+  images.gallery.push(null);
+  updateGalleryUI();
+}
+function updateGalleryUI(){
+  const c = document.getElementById('galleryUploads');
+  c.innerHTML = '';
+  images.gallery.forEach((img, i) => {
+    const z = document.createElement('div');
+    z.className = 'upload' + (img?' has':'');
+    z.style.position = 'relative';
+    z.onclick = () => document.getElementById('gIn'+i).click();
+    z.innerHTML = img ? `<img src="${img}" style="max-height:70px"><div class="hint">Заменить</div>` : `<div class="hint">Фото ${i+1}</div>`;
+    z.innerHTML += `<input type="file" id="gIn${i}" accept="image/*" onchange="uploadGallery(event,${i})" style="display:none">`;
+    const rm = document.createElement('button');
+    rm.textContent = '×';
+    rm.style.cssText = 'position:absolute;top:3px;right:3px;background:#e57373;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;line-height:1';
+    rm.onclick = (e) => { e.stopPropagation(); images.gallery.splice(i,1); updateGalleryUI(); renderPreview(); };
+    z.appendChild(rm);
+    c.appendChild(z);
+  });
+}
+async function uploadGallery(event, idx){
+  const file = event.target.files[0];
+  if(!file || !currentUser) return;
+  if(!inviteId) inviteId = generateId();
+  const path = `invitations/${inviteId}/gallery/${idx}-${Date.now()}-${file.name}`;
+  try {
+    const storageRef = ref(storage, path);
+    await uploadBytesResumable(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    images.gallery[idx] = url;
+    updateGalleryUI();
+    renderPreview();
+    toast('Фото загружено');
+  } catch(e){ toast('Ошибка: ' + e.message); }
+}
+
+/* ============ TOGGLES ============ */
+function toggleWitness(){ document.getElementById('witnessFields').style.display = document.getElementById('tWitnesses').checked?'block':'none'; }
+function toggleInsta(){ document.getElementById('instaField').style.display = document.getElementById('tInsta').checked?'block':'none'; }
+function togglePhotoZone(){ document.getElementById('photoZone').style.display = document.getElementById('tPhoto').checked?'block':'none'; }
+function toggleMusicUI(){ document.getElementById('musicFields').style.display = document.getElementById('tMusic').checked?'block':'none'; }
+function toggleVideoUI(){ document.getElementById('videoFields').style.display = document.getElementById('tVideo').checked?'block':'none'; }
+function applyTheme(){
+  const t = themes[document.getElementById('themeSelect').value];
+  if(!t) return;
+  document.getElementById('cBg').value = t.bg;
+  document.getElementById('cText').value = t.text;
+  document.getElementById('cTitle').value = t.title;
+  document.getElementById('cAccent').value = t.accent;
+}
+function applyScrollStyle(){
+  const s = document.getElementById('phoneScreen');
+  const style = document.getElementById('scrollStyle').value;
+  s.style.scrollBehavior = style==='auto'?'auto':'smooth';
+  if(style==='snap'){ s.style.scrollSnapType='y mandatory'; s.querySelectorAll('.sec').forEach(x=>x.style.scrollSnapAlign='start'); }
+  else { s.style.scrollSnapType='none'; s.querySelectorAll('.sec').forEach(x=>x.style.scrollSnapAlign='none'); }
+}
+function sparkles(){
+  if(!document.getElementById('tSparkles')?.checked) return;
+  for(let i=0;i<15;i++){
+    setTimeout(()=>{
+      const s = document.createElement('div');
+      s.className = 'spark';
+      s.style.left = (20+Math.random()*60)+'%';
+      s.style.top = (10+Math.random()*50)+'%';
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(),1600);
+    }, i*60);
+  }
+}
+
+/* ============ PREVIEW ============ */
+function renderPreview(){
+  const screen = document.getElementById('phoneScreen');
+  screen.innerHTML = '';
+  const cBg = document.getElementById('cBg').value;
+  const cText = document.getElementById('cText').value;
+  const cTitle = document.getElementById('cTitle').value;
+  const cAccent = document.getElementById('cAccent').value;
+  const fTitle = document.getElementById('fontTitle').value;
+  const fText = document.getElementById('fontText').value;
+  screen.style.background = cBg;
+  screen.style.color = cText;
+  screen.style.fontFamily = fText + ',sans-serif';
+  screen.className = 'screen';
+  if(currentFrame!=='none') screen.classList.add('frame-' + currentFrame);
+
+  const n1 = document.getElementById('name1').value || 'Имя 1';
+  const n2 = document.getElementById('name2').value || 'Имя 2';
+  const showMsg = document.getElementById('tMessage').checked;
+  const showPhoto = document.getElementById('tPhoto').checked;
+  const showWit = document.getElementById('tWitnesses').checked;
+  const showInsta = document.getElementById('tInsta').checked;
+  const showVideo = document.getElementById('tVideo').checked;
+  const showWishes = document.getElementById('tWishes').checked;
+  const showSocial = document.getElementById('tSocial').checked;
+
+  blocks.forEach(b => {
+    if(!b.enabled) return;
+    if(b.id==='social' && !showSocial) return;
+    if(b.id==='wishes' && !showWishes) return;
+    const sec = document.createElement('div');
+    sec.className = 'sec';
+    let html = '';
+    switch(b.id){
+      case 'cover':
+        let vid = '';
+        if(showVideo && videoUrl) vid = `<video class="cover-video" src="${videoUrl}" muted loop autoplay playsinline></video>`;
+        html = `<p style="font-size:9.5px;letter-spacing:2.5px;color:${cAccent};text-transform:uppercase;margin-bottom:6px">Приглашение на торжество</p>${vid}${showPhoto?(images.cover?`<img class="sec-photo" src="${images.cover}" style="border-color:${cAccent}">`:`<div class="sec-photo" style="background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;border-color:${cAccent}">Фото</div>`):''}<div class="sec-names" style="font-family:'${fTitle}',serif;color:${cTitle}">${n1}<br><span style="font-size:16px;opacity:.6">&</span><br>${n2}</div>${showMsg?`<p class="sec-msg">«${document.getElementById('mainMessage').value}»</p>`:''}${showWit?`<p style="font-size:10.5px;margin-top:8px;opacity:.8"><strong>Свидетели:</strong> ${document.getElementById('witness1').value||'…'} & ${document.getElementById('witness2').value||'…'}</p>`:''}${showInsta?`<p style="font-size:11px;color:${cAccent};margin-top:6px">${document.getElementById('instaAccount').value||'@instagram'}</p>`:''}`;
+        break;
+      case 'date': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Место и дата</div><p style="font-size:14px;font-weight:500">${document.getElementById('eventDate').value}</p><p style="font-size:12px;opacity:.85">${document.getElementById('eventPlace').value}</p>`; break;
+      case 'transport': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Транспорт</div><p style="font-size:12px;white-space:pre-line">${document.getElementById('transportInfo').value}</p>`; break;
+      case 'aboutGuests': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">О гостях</div><p style="font-size:12px;white-space:pre-line">${document.getElementById('guestsInfo').value}</p>`; break;
+      case 'loveStory': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Наша история</div><p style="font-size:12px;font-style:italic;white-space:pre-line">${document.getElementById('loveStoryInfo').value}</p>`; break;
+      case 'gallery':
+        const g = images.gallery.filter(Boolean);
+        html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Галерея</div>${g.length?`<div class="gallery">${g.map(s=>`<img src="${s}">`).join('')}</div>`:'<div style="height:70px;background:rgba(0,0,0,.04);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px">Нет фото</div>'}`;
+        break;
+      case 'gifts': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Подарки</div><p style="font-size:12px;white-space:pre-line">${document.getElementById('giftsInfo').value}</p>`; break;
+      case 'venue': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Место проведения</div><p style="font-size:13px;font-weight:500">${document.getElementById('venueName').value}</p>${images.map?`<img src="${images.map}" style="width:100%;border-radius:8px;margin:6px 0">`:'<div style="height:80px;background:rgba(0,0,0,.05);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px;margin:6px 0">Карта</div>'}<a href="${document.getElementById('venueMapLink').value}" target="_blank" style="font-size:11px;color:${cAccent};text-decoration:none">Открыть на карте</a>`; break;
+      case 'seating': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Рассадка</div><div style="font-size:11px;background:rgba(0,0,0,.04);padding:10px;border-radius:8px;text-align:left;white-space:pre-line">${document.getElementById('seatingInfo').value}</div>`; break;
+      case 'wishes': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">${document.getElementById('wishesTitle').value}</div><div style="font-size:11px;color:#aaa;padding:8px;border:1px dashed rgba(0,0,0,.1);border-radius:8px">Гости оставляют пожелания — после проверки они появятся здесь</div>`; break;
+      case 'rsvp': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">${document.getElementById('rsvpTitle').value}</div><div style="display:flex;flex-direction:column;gap:6px;max-width:200px;margin:0 auto"><input placeholder="Имя" style="padding:8px;border-radius:6px;border:1px solid rgba(0,0,0,.1);font-size:11px"><div style="display:flex;gap:6px"><button style="flex:1;padding:6px;border-radius:6px;border:none;background:${cAccent};color:#fff;font-size:11px">Приду</button><button style="flex:1;padding:6px;border-radius:6px;border:1px solid ${cAccent};background:transparent;color:${cAccent};font-size:11px">Не приду</button></div></div>`; break;
+      case 'social': html = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">Поделиться</div><div style="display:flex;gap:8px;justify-content:center"><span style="width:22px;height:22px">TG</span><span style="width:22px;height:22px">WA</span><span style="width:22px;height:22px">IG</span><span style="width:22px;height:22px">FB</span></div>`; break;
+    }
+    sec.innerHTML = html;
+    screen.appendChild(sec);
+  });
+  customSections.forEach(s => {
+    if(!s.enabled || (!s.title && !s.body)) return;
+    const sec = document.createElement('div');
+    sec.className = 'sec';
+    sec.innerHTML = `<div class="sec-title" style="color:${cTitle};font-family:'${fTitle}',serif">${s.title||'Информация'}</div><div style="font-size:12px;white-space:pre-line;line-height:1.6">${s.body}</div>`;
+    screen.appendChild(sec);
+  });
+  applyScrollStyle();
+}
+
+/* ============ SAVE ============ */
+function generateId(){ return 'inv-' + Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4); }
+function collectData(){
+  return {
+    lang:'ru', template:currentTemplate, frame:currentFrame, wrapStyle:document.getElementById('wrapStyle').value,
+    names:{name1:document.getElementById('name1').value, name2:document.getElementById('name2').value},
+    witnesses:{enabled:document.getElementById('tWitnesses').checked, w1:document.getElementById('witness1').value, w2:document.getElementById('witness2').value},
+    message:{enabled:document.getElementById('tMessage').checked, text:document.getElementById('mainMessage').value},
+    insta:{enabled:document.getElementById('tInsta').checked, account:document.getElementById('instaAccount').value},
+    theme:document.getElementById('themeSelect').value,
+    colors:{accent:document.getElementById('cAccent').value, title:document.getElementById('cTitle').value, text:document.getElementById('cText').value, bg:document.getElementById('cBg').value},
+    fonts:{title:document.getElementById('fontTitle').value, text:document.getElementById('fontText').value},
+    toggles:{photo:document.getElementById('tPhoto').checked, music:document.getElementById('tMusic').checked, video:document.getElementById('tVideo').checked, wishes:document.getElementById('tWishes').checked, social:document.getElementById('tSocial').checked, sparkles:document.getElementById('tSparkles').checked, autoScroll:document.getElementById('tAutoScroll').checked},
+    scrollStyle:document.getElementById('scrollStyle').value, revealSpeed:document.getElementById('revealSpeed').value, autoScrollSec:document.getElementById('autoScrollSec').value,
+    music:{url:musicUrl, volume:document.getElementById('musicVol').value},
+    video:{url:videoUrl},
+    content:{
+      eventDate:document.getElementById('eventDate').value, eventPlace:document.getElementById('eventPlace').value,
+      transport:document.getElementById('transportInfo').value, guests:document.getElementById('guestsInfo').value,
+      loveStory:document.getElementById('loveStoryInfo').value, gifts:document.getElementById('giftsInfo').value,
+      venueName:document.getElementById('venueName').value, venueMapLink:document.getElementById('venueMapLink').value,
+      seating:document.getElementById('seatingInfo').value, rsvpText:document.getElementById('rsvpText').value,
+      rsvpTitle:document.getElementById('rsvpTitle').value, wishesTitle:document.getElementById('wishesTitle').value,
+      wishesThanks:document.getElementById('wishesThanks').value, shareText:document.getElementById('shareText').value
+    },
+    blocks: blocks.map(b=>({id:b.id, enabled:b.enabled})),
+    customSections, images
+  };
+}
+async function saveInvite(){
+  if(!currentUser || !isAdmin){ toast('Нет доступа'); return; }
+  if(!inviteId) inviteId = generateId();
+  const btn = document.getElementById('saveBtn'); const btn2 = document.getElementById('saveBtn2');
+  btn.disabled = true; btn2.disabled = true; btn.textContent = 'Сохранение...';
+  try {
+    const data = collectData();
+    data.updatedAt = serverTimestamp();
+    data.ownerUid = currentUser.uid;
+    await setDoc(doc(db, 'invitations', inviteId), data, {merge:true});
+    toast('Сохранено! ID: ' + inviteId);
+    showLink();
+  } catch(e){ toast('Ошибка: ' + e.message); }
+  btn.disabled = false; btn2.disabled = false; btn.textContent = 'Сохранить';
+}
+
+/* ============ LINK ============ */
+function getInviteUrl(){
+  if(!inviteId) return null;
+  const base = window.location.href.replace(/index\.html.*$/, '').replace(/\/$/, '');
+  return base + '/invite.html?id=' + inviteId;
+}
+function showLink(){
+  if(!inviteId){ toast('Сначала сохраните приглашение'); return; }
+  const url = getInviteUrl();
+  document.getElementById('inviteLinkBox').textContent = url;
+  document.getElementById('inviteLinkBox').dataset.url = url;
+  document.getElementById('linkModal').classList.add('show');
+}
+function copyLink(){
+  const url = document.getElementById('inviteLinkBox').dataset.url;
+  if(navigator.clipboard){ navigator.clipboard.writeText(url).then(()=>toast('Ссылка скопирована')).catch(()=>toast(url)); }
+  else toast(url);
+}
+
+/* ============ MISC ============ */
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2800); }
+function resetAll(){ if(!confirm('Сбросить все настройки?')) return; location.reload(); }
+
+window.toggleBlock = toggleBlock;
+window.moveBlock = moveBlock;
+window.removeCustom = removeCustom;
+window.addCustomSection = addCustomSection;
+window.toggleWitness = toggleWitness;
+window.toggleInsta = toggleInsta;
+window.togglePhotoZone = togglePhotoZone;
+window.toggleMusicUI = toggleMusicUI;
+window.toggleVideoUI = toggleVideoUI;
+window.applyTheme = applyTheme;
+window.renderPreview = renderPreview;
+window.uploadFile = uploadFile;
+window.uploadGallery = uploadGallery;
+window.addGallerySlot = addGallerySlot;
+window.saveInvite = saveInvite;
+window.showLink = showLink;
+window.copyLink = copyLink;
+window.resetAll = resetAll;
+window.logout = logout;
+window.customSections = customSections;
+</script>
+</body>
+</html>

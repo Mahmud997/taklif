@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Приглашения ----------
+    // Гость читает приглашение по id, создавать/менять может только админ
+    match /invitations/{inviteId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ---------- RSVP ----------
+    // Гость отправляет ответ, видит ответы только админ
+    match /rsvps/{rsvpId} {
+      allow create: if isValidRsvp();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ---------- Пожелания ----------
+    // Гость видит только одобренные, создаёт только с approved:false
+    match /wishes/{wishId} {
+      allow read: if resource.data.approved == true || isAdmin();
+      allow create: if isValidWish()
+                    && request.resource.data.approved == false;
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- Админы ----------
+    // Список админов управляется ТОЛЬКО вручную в Firebase Console.
+    // Из кода — только чтение (чтобы админка проверила себя).
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+  }
+
+  // ---------- Функции ----------
+  function isAdmin() {
+    return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+  }
+
+  function isValidRsvp() {
+    return request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.attending is bool
+        && request.resource.data.guests is int
+        && request.resource.data.guests >= 0
+        && request.resource.data.guests <= 20;
+  }
+
+  function isValidWish() {
+    return request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 60;
+  }
+}
