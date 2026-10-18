@@ -6,10 +6,10 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "ВСТАВЬТЕ_API_KEY",
-  authDomain: "ВСТАВЬТЕ.firebaseapp.com",
-  projectId: "ВСТАВЬТЕ_PROJECT_ID",
-  storageBucket: "ВСТАВЬТЕ.appspot.com",
-  messagingSenderId: "ВСТАВЬТЕ_SENDER_ID",
-  appId: "ВСТАВЬТЕ_APP_ID"
+  apiKey: "AIzaSyBwQU_mhtJxI9prX6675csA7-L_kr0f20w",
+  authDomain: "shaqyrtu-797bf.firebaseapp.com",
+  projectId: "shaqyrtu-797bf",
+  storageBucket: "shaqyrtu-797bf.firebasestorage.app",
+  messagingSenderId: "45548811154",
+  appId: "1:45548811154:web:29a085082b5fa6f39b874b"
 };
