@@ -6,10 +6,10 @@
 // ============================================================
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyCTx_2SjCfMqqwEJEAoJCBOfj8KCW7Wvi8",
-  authDomain: "shaqyrtu-9aa96.firebaseapp.com",
-  projectId: "shaqyrtu-9aa96",
-  storageBucket: "shaqyrtu-9aa96.firebasestorage.app",
-  messagingSenderId: "357512087413",
-  appId: "1:357512087413:web:076116b36fb6729155f53c"
+  apiKey: "AIzaSyBwQU_mhtJxI9prX6675csA7-L_kr0f20w",
+  authDomain: "shaqyrtu-797bf.firebaseapp.com",
+  projectId: "shaqyrtu-797bf",
+  storageBucket: "shaqyrtu-797bf.firebasestorage.app",
+  messagingSenderId: "45548811154",
+  appId: "1:45548811154:web:29a085082b5fa6f39b874b"
 };
